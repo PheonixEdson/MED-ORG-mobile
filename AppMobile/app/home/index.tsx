@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
@@ -15,6 +16,7 @@ export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [manterConectado, setManterConectado] = useState(false);
+  const router = useRouter();
 
   const excluirConta = async () => {
     Alert.alert(
@@ -59,8 +61,7 @@ export default function HomeScreen() {
   };
 
   const handleEntrar = () => {
-    // Aqui você pode navegar para outra tela:
-    // router.push("/algumaTela");
+    router.push("/escolha-cadastro");
   };
 
   return (
