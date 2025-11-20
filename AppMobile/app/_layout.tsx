@@ -12,6 +12,7 @@ export default function RootLayout() {
       <Stack.Screen name="consultas" />
       <Stack.Screen name="prescricoes" />
       <Stack.Screen name="prescricao-medica" />
+      <Stack.Screen name="prescricao-paciente" />
       <Stack.Screen name="bate-papo" />
       <Stack.Screen name="mapa" />
       <Stack.Screen name="perfil-medico" />
