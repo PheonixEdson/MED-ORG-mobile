@@ -15,7 +15,7 @@ export default function HomeMedico() {
   //useEffect(() => {
   //  if (tipoUsuario !== "medico") {
   //    alert("Acesso permitido apenas para médicos.");
-  //    router.push("/home");
+  //    router.push("/escolha-cadastro");
   //  }
   //}, []);
 
@@ -59,7 +59,7 @@ export default function HomeMedico() {
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              onPress={() => router.push(item.path)}
+              onPress={() => router.push(item.path as any)}
               style={[
                 styles.menuItem,
                 item.label === "Suporte" && styles.menuItemSuporte

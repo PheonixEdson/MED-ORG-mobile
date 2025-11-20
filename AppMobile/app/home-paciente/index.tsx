@@ -1,54 +1,44 @@
-import { useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React from "react";
 import { useRouter } from "expo-router";
 
 export default function HomePaciente() {
   const router = useRouter();
 
-  //❗LocalStorage do navegador NÃO existe no mobile.
-  // Usamos AsyncStorage, mas por enquanto vamos mockar.
-  const usuarioSalvo = { nome: "Usuário", tipo: "paciente" };
-
-  const userName = usuarioSalvo?.nome || "Usuário";
-  const tipoUsuario = usuarioSalvo?.tipo;
-
-  //useEffect(() => {
-    //if (tipoUsuario !== "paciente") {
-      //alert("Acesso permitido apenas para pacientes.");
-      //router.replace("/home");
-    //}
-  //}, []);
+  const userName = "Paciente"; // depois conectamos com AsyncStorage
+  const tipoUsuario = "paciente";
 
   const menuItems = [
-    { label: "Falar com Médicos", icon: "💬", path: "/paciente/chat" },
-    { label: "Agendamentos", icon: "📅", path: "/paciente/servicos-oferecidos" },
-    { label: "Prescrições Atuais", icon: "💊", path: "/paciente/prescricao" },
-    { label: "Mapa", icon: "📍", path: "/paciente/mapa" },
-    { label: "Conta", icon: "👤", path: "/paciente/conta" },
-    { label: "Configurações", icon: "⚙️", path: "/paciente/configuracoes" },
+    { label: "Falar com Médicos", icon: "💬", path: "/bate-papo" },
+    { label: "Agendamentos", icon: "📅", path: "/servicos" },
+    { label: "Prescrições Atuais", icon: "💊", path: "/prescricao-paciente" },
+    { label: "Mapa", icon: "📍", path: "/mapa" },
+    { label: "Conta", icon: "👤", path: "/perfil-paciente" },
+    { label: "Configurações", icon: "⚙️", path: "/configuracoes" },
   ];
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>MED-ORG</Text>
-        <Text style={styles.time}>
-          {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        <Text style={styles.headerText}>MED-ORG</Text>
+        <Text style={styles.timeText}>
+          {new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </Text>
       </View>
 
       {/* Nome do usuário */}
-      <View style={styles.userBox}>
-        <Text style={styles.userName}>{userName}</Text>
-      </View>
+      <Text style={styles.userName}>{userName}</Text>
 
       {/* Menu */}
       <View style={styles.menuGrid}>
         {menuItems.map((item, index) => (
           <TouchableOpacity
             key={index}
-            onPress={() => router.push(item.path)}
+            onPress={() => router.push(item.path as any)}
             style={styles.menuItem}
           >
             <Text style={styles.menuIcon}>{item.icon}</Text>
@@ -56,90 +46,72 @@ export default function HomePaciente() {
           </TouchableOpacity>
         ))}
 
-        {/* Suporte */}
         <TouchableOpacity
+          style={[styles.menuItem, styles.suporteButton]}
           onPress={() => router.push("/suporte")}
-          style={[styles.menuItem, styles.suporteItem]}
         >
           <Text style={styles.menuIcon}>🆘</Text>
           <Text style={styles.menuLabel}>Suporte</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    flex: 1,
     backgroundColor: "#e0e7ff",
   },
-
   header: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#1e3a8a",
     padding: 20,
-    borderRadius: 12,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
   },
-
-  headerTitle: {
-    color: "#fff",
-    fontSize: 20,
+  headerText: {
+    color: "white",
+    fontSize: 22,
     fontWeight: "bold",
   },
-
-  time: {
-    color: "#fff",
+  timeText: {
+    color: "white",
     fontSize: 16,
   },
-
-  userBox: {
-    backgroundColor: "#dbeafe",
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 25,
-  },
-
   userName: {
-    textAlign: "center",
+    backgroundColor: "#dbeafe",
+    padding: 15,
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "600",
+    textAlign: "center",
     color: "#1e3a8a",
   },
-
   menuGrid: {
-    flexDirection: "column",
-    gap: 16,
-  },
-
-  menuItem: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
     padding: 20,
-    backgroundColor: "#fff",
-    borderRadius: 14,
+    justifyContent: "center",
+  },
+  menuItem: {
+    width: "42%",
+    padding: 20,
+    margin: 10,
+    backgroundColor: "white",
+    borderRadius: 16,
+    alignItems: "center",
     borderWidth: 2,
     borderColor: "#3b82f6",
-    shadowColor: "#3b82f6",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
   },
-
   menuIcon: {
     fontSize: 30,
-    marginRight: 18,
   },
-
   menuLabel: {
-    fontSize: 18,
-    fontWeight: "bold",
+    marginTop: 10,
+    fontWeight: "600",
+    fontSize: 16,
     color: "#1e40af",
   },
-
-  suporteItem: {
+  suporteButton: {
     borderColor: "#dc2626",
     backgroundColor: "#fee2e2",
   },
