@@ -19,6 +19,10 @@ export default function RootLayout() {
       <Stack.Screen name="perfil-secretario" />
       <Stack.Screen name="configuracoes" />
       <Stack.Screen name="suporte" />
+
+      <Stack.Screen name="home-medico" />
+      <Stack.Screen name="home-paciente" />
+      <Stack.Screen name="home-secretario" />
     </Stack>
   );
 }
