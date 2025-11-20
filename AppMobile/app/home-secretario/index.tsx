@@ -40,7 +40,7 @@ export default function HomeSecretario() {
     { label: "Agendar Consulta", icon: "📅", path: "/agendar-consulta" },
     { label: "Listar Consultas", icon: "📋", path: "/listar-consultas" },
     { label: "Mapa", icon: "📍", path: "/mapa" },
-    { label: "Configuração", icon: "⚙️", path: "/configuracao" },
+    { label: "Configuração", icon: "⚙️", path: "/configuracoes" },
     { label: "Conta", icon: "👤", path: "/conta" },
     { label: "Suporte", icon: "🆘", path: "/suporte" },
   ];
