@@ -1,6 +1,6 @@
 # MED-ORG-mobile
 
-- Implementação Mobile do Projeto de Desenvolvimento Web
+## Implementação Mobile do Projeto de Desenvolvimento Web
 
 - Desenvolvedores:
     - Antonio Edson Alves de Holanda Neto
