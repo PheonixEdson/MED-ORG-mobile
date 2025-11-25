@@ -34,7 +34,7 @@ export default function CadastroPaciente() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  // 🔹 Converte 25/03/2004 -> 2004-03-25 (PostgreSQL)
+  // Converte 25/03/2004 -> 2004-03-25 (PostgreSQL)
   const formatarDataParaSQL = (dataBR: string) => {
     const [dia, mes, ano] = dataBR.split("/");
     return `${ano}-${mes}-${dia}`;
