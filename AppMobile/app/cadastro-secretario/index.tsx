@@ -7,7 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
+import { supabase } from "../../supabase";
 
 export default function CadastroSecretario() {
   const router = useRouter();
@@ -53,14 +55,71 @@ export default function CadastroSecretario() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = () => {
+  function formatarDataParaSQL(dataBR: string) {
+    // de "25/03/2004" para "2004-03-25"
+    const [dia, mes, ano] = dataBR.split("/");
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  const handleSubmit = async () => {
     if (formData.senha !== formData.confirmarSenha) {
-      alert("As senhas não coincidem.");
+      Alert.alert("Erro", "As senhas não coincidem.");
       return;
     }
 
-    alert("Cadastro realizado com sucesso!");
-    router.push("/home-secretario");
+    try {
+      // ==============================================================
+      // 1. Criar usuário no Supabase Auth
+      // ==============================================================
+
+      const { data: authData, error: authError } =
+        await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.senha,
+          options: {
+            data: { role: "Secretario" },
+          },
+        });
+
+      if (authError) {
+        Alert.alert("Erro no cadastro", authError.message);
+        return;
+      }
+
+      const user = authData.user;
+      if (!user) {
+        Alert.alert("Erro", "Usuário não pôde ser criado.");
+        return;
+      }
+
+      // ==============================================================
+      // 2. Inserir dados na tabela SECRETARIO no seu banco
+      // ==============================================================
+
+      const { error: insertError } = await supabase.from("secretario").insert({
+        user_id: user.id,
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone,
+        cpf: formData.cpf.replace(/\D/g, ""),
+        sexo: formData.sexo,
+        data_de_nascimento: formatarDataParaSQL(formData.dataNascimento),
+        endereco: formData.endereco,
+        senha: formData.senha, // ⚠ Você deve criptografar isso no backend em produção
+      });
+
+      if (insertError) {
+        Alert.alert("Erro", insertError.message);
+        return;
+      }
+
+      Alert.alert("Sucesso!", "Cadastro realizado com sucesso.");
+      router.push("/home-secretario");
+
+    } catch (e) {
+      console.log(e);
+      Alert.alert("Erro", "Ocorreu um erro inesperado.");
+    }
   };
 
   return (
@@ -105,14 +164,14 @@ export default function CadastroSecretario() {
 
         <TextInput
           style={styles.input}
-          placeholder="Sexo (M/F)"
+          placeholder="Sexo (Masculino/Feminino/Outro)"
           value={formData.sexo}
           onChangeText={(v) => handleChange("sexo", v)}
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Data de Nascimento"
+          placeholder="Data de Nascimento (DD/MM/AAAA)"
           value={formData.dataNascimento}
           keyboardType="numeric"
           onChangeText={(v) => handleChange("dataNascimento", v)}
@@ -211,5 +270,3 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
-
-// erro corrigido

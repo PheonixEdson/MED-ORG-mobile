@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Link } from "expo-router";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
   View,
   Text,
@@ -12,12 +11,41 @@ import {
   ScrollView,
 } from "react-native";
 
+import { supabase } from "../../supabase";
+
 export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [manterConectado, setManterConectado] = useState(false);
+
   const router = useRouter();
 
+  // =========================================================
+  // LOGIN SUPABASE
+  // =========================================================
+  const handleEntrar = async () => {
+    if (!email || !senha) {
+      Alert.alert("Erro", "Preencha email e senha.");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+
+    if (error) {
+      Alert.alert("Erro", error.message);
+      return;
+    }
+
+    // Login OK → redireciona
+    router.push("/escolha-cadastro");
+  };
+
+  // =========================================================
+  // EXCLUIR CONTA (auth + tabelas ligadas)
+  // =========================================================
   const excluirConta = async () => {
     Alert.alert(
       "Excluir Conta",
@@ -29,39 +57,46 @@ export default function HomeScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const params = new URLSearchParams();
-              params.append("email", email);
-              params.append("senha", senha);
+              // 1. Buscar usuário logado
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
 
-              const res = await fetch(
-                `${process.env.EXPO_PUBLIC_API_URL}/paciente/delete.php`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                  body: params.toString(),
-                }
+              if (!user) {
+                Alert.alert("Erro", "Você precisa estar logado.");
+                return;
+              }
+
+              // 2. Deletar tabelas ligadas (paciente, medico, secretario)
+              // Atenção: precisa RLS permitir delete do próprio registro!
+              await supabase.from("paciente").delete().eq("user_id", user.id);
+              await supabase.from("medico").delete().eq("user_id", user.id);
+              await supabase
+                .from("secretario")
+                .delete()
+                .eq("user_id", user.id);
+
+              // 3. Deletar o usuário do Supabase Auth (admin API)
+              const { error: delError } = await supabase.auth.admin.deleteUser(
+                user.id
               );
 
-              const data = await res.json();
-
-              if (data?.sucesso) {
-                Alert.alert("Sucesso", "Conta excluída com sucesso!");
-                setEmail("");
-                setSenha("");
-              } else {
-                Alert.alert("Erro", data?.mensagem || "Falha ao excluir.");
+              if (delError) {
+                Alert.alert("Erro", delError.message);
+                return;
               }
-            } catch {
-              Alert.alert("Erro", "Erro ao conectar com o servidor.");
+
+              Alert.alert("Conta excluída com sucesso!");
+              setEmail("");
+              setSenha("");
+            } catch (e) {
+              console.log(e);
+              Alert.alert("Erro", "Falha ao excluir a conta.");
             }
           },
         },
       ]
     );
-  };
-
-  const handleEntrar = () => {
-    router.push("/escolha-cadastro");
   };
 
   return (
@@ -116,18 +151,21 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* CHECKBOX SIMPLIFICADO */}
+        {/* CHECKBOX */}
         <TouchableOpacity
           style={styles.row}
           onPress={() => setManterConectado(!manterConectado)}
         >
-          <View style={[styles.checkbox, manterConectado && styles.checkboxChecked]} />
+          <View
+            style={[styles.checkbox, manterConectado && styles.checkboxChecked]}
+          />
           <Text style={styles.checkboxLabel}>Manter-me Conectado</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   telaLogin: {
