@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import { User, Phone, MapPin, Calendar } from "phosphor-react-native";
-import Parse from "parse/react-native.js";
+import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
+import { User, Phone, MapPin, Calendar, PhoneIcon, MapPinIcon, CalendarIcon } from "phosphor-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { supabase } from "../../supabase";
 
 export default function PerfilPaciente() {
-  const [dados, setDados] = useState(null);
-  const [foto, setFoto] = useState(null);
+  const [dados, setDados] = useState<any>(null);
+  const [foto, setFoto] = useState<string | null>(null);
 
   useEffect(() => {
     carregar();
@@ -14,43 +14,84 @@ export default function PerfilPaciente() {
 
   async function carregar() {
     try {
-      const currentUser = await Parse.User.currentAsync();
-      if (!currentUser) return;
+      const { data: {user}, error } = await supabase.auth.getUser();
+      if (error || !user) return;
 
-      setDados({
-        nome: currentUser.get("nome"),
-        idade: currentUser.get("idade"),
-        telefone: currentUser.get("telefone"),
-        endereco: currentUser.get("endereco"),
-        consultasRealizadas: currentUser.get("consultasRealizadas") || 0,
-        proximasConsultas: currentUser.get("proximasConsultas") || 0,
-      });
+      const userId = user.id;
 
-      const fotoPerfil = currentUser.get("fotoPerfil");
-      if (fotoPerfil) setFoto(fotoPerfil.url());
+      const { data, error: queryError } = await supabase
+        .from("paciente")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (queryError) {
+        console.log("Erro ao buscar dados:", queryError.message);
+        return;
+      }
+
+      setDados(data);
+      setFoto(data.fotoPerfil || null);
     } catch (e) {
       console.log(e);
     }
   }
 
   async function alterarFoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      aspect: [1, 1],
-      quality: 1,
-      allowsEditing: true,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
 
-    if (!result.canceled) {
+      if (result.canceled) return;
+
       const uri = result.assets[0].uri;
       const nomeArquivo = uri.substring(uri.lastIndexOf("/") + 1);
-      const arquivo = new Parse.File(nomeArquivo, { uri });
 
-      const currentUser = await Parse.User.currentAsync();
-      currentUser.set("fotoPerfil", arquivo);
-      await currentUser.save();
+      // Busca user atual
+      const { data: {user}, error } = await supabase.auth.getUser();
+      if (error || !user) return;
 
-      setFoto(arquivo.url());
+      const userId = user.id;
+
+      // Faz upload da imagem para Supabase Storage
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("perfil-pacientes")
+        .upload(nomeArquivo, blob, { upsert: true });
+
+      if (uploadError) {
+        console.log("Erro ao enviar foto:", uploadError.message);
+        Alert.alert("Erro", "Não foi possível enviar a foto.");
+        return;
+      }
+
+      // Pega URL pública
+      const { data: urlData } = supabase.storage
+        .from("perfil-pacientes")
+        .getPublicUrl(nomeArquivo);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Atualiza no banco de dados
+      const { error: updateError } = await supabase
+        .from("paciente")
+        .update({ fotoPerfil: publicUrl })
+        .eq("id", userId);
+
+      if (updateError) {
+        console.log("Erro ao atualizar foto no banco:", updateError.message);
+        return;
+      }
+
+      setFoto(publicUrl);
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -89,10 +130,10 @@ export default function PerfilPaciente() {
         </TouchableOpacity>
 
         <Text style={{ fontSize: 24, fontWeight: "bold", marginTop: 10 }}>
-          {dados?.nome}
+          {dados?.nome || "Carregando..."}
         </Text>
         <Text style={{ fontSize: 16, color: "#666" }}>
-          Paciente — {dados?.idade} anos
+          Paciente — {dados?.idade || "-"} anos
         </Text>
       </View>
 
@@ -107,10 +148,10 @@ export default function PerfilPaciente() {
           Informações
         </Text>
 
-        <Info label="Telefone" value={dados?.telefone} icon={<Phone size={26} color="#3B82F6" />} />
-        <Info label="Endereço" value={dados?.endereco} icon={<MapPin size={26} color="#10B981" />} />
-        <Info label="Consultas realizadas" value={`${dados?.consultasRealizadas}`} icon={<Calendar size={26} color="#F97316" />} />
-        <Info label="Próximas consultas" value={`${dados?.proximasConsultas}`} icon={<Calendar size={26} color="#6366F1" />} />
+        <Info label="Telefone" value={dados?.telefone} icon={<PhoneIcon size={26} color="#3B82F6" />} />
+        <Info label="Endereço" value={dados?.endereco} icon={<MapPinIcon size={26} color="#10B981" />} />
+        <Info label="Consultas realizadas" value={`${dados?.consultasRealizadas || 0}`} icon={<CalendarIcon size={26} color="#F97316" />} />
+        <Info label="Próximas consultas" value={`${dados?.proximasConsultas || 0}`} icon={<CalendarIcon size={26} color="#6366F1" />} />
       </View>
 
     </ScrollView>

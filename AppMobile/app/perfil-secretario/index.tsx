@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import { User, ClipboardText, Phone, Calendar } from "phosphor-react-native";
-import Parse from "parse/react-native.js";
+import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
+import { ClipboardTextIcon, CalendarIcon, PhoneIcon, UserIcon } from "phosphor-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { supabase } from "../../supabase";
 
 export default function PerfilSecretario() {
-  const [dados, setDados] = useState(null);
-  const [foto, setFoto] = useState(null);
+  const [dados, setDados] = useState<any>(null);
+  const [foto, setFoto] = useState<string | null>(null);
 
   useEffect(() => {
     buscarDadosSecretario();
@@ -14,46 +14,85 @@ export default function PerfilSecretario() {
 
   async function buscarDadosSecretario() {
     try {
-      const currentUser = await Parse.User.currentAsync();
+      // Pega usuário logado
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) return;
 
-      if (!currentUser) return;
+      const userId = data.user.id;
 
-      setDados({
-        nome: currentUser.get("nome") || "Nome não definido",
-        telefone: currentUser.get("telefone") || "Sem telefone",
-        responsavelPor: currentUser.get("responsavelPor") || "—",
-        atendimentosHoje: currentUser.get("atendimentosHoje") || 0,
-        agendamentos: currentUser.get("agendamentos") || 0,
-      });
+      const { data: secretarioData, error: queryError } = await supabase
+        .from("secretario")
+        .select("*")
+        .eq("id", userId)
+        .single();
 
-      const fotoPerfil = currentUser.get("fotoPerfil");
+      if (queryError) {
+        console.log("Erro ao buscar dados:", queryError.message);
+        return;
+      }
 
-      if (fotoPerfil) setFoto(fotoPerfil.url());
-    } catch (error) {
-      console.log("Erro ao buscar dados:", error);
+      setDados(secretarioData);
+      setFoto(secretarioData.fotoPerfil || null);
+    } catch (e) {
+      console.log("Erro ao buscar dados:", e);
     }
   }
 
   async function alterarFoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      aspect: [1, 1],
-      allowsEditing: true,
-      quality: 1,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
 
-    if (!result.canceled) {
+      if (result.canceled) return;
+
       const uri = result.assets[0].uri;
-
       const nomeArquivo = uri.substring(uri.lastIndexOf("/") + 1);
-      const arquivo = new Parse.File(nomeArquivo, { uri });
 
-      const currentUser = await Parse.User.currentAsync();
-      currentUser.set("fotoPerfil", arquivo);
+      // Pega usuário logado
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) return;
 
-      await currentUser.save();
+      const userId = data.user.id;
 
-      setFoto(arquivo.url());
+      // Upload da foto
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("perfil-secretarios")
+        .upload(nomeArquivo, blob, { upsert: true });
+
+      if (uploadError) {
+        console.log("Erro ao enviar foto:", uploadError.message);
+        Alert.alert("Erro", "Não foi possível enviar a foto.");
+        return;
+      }
+
+      // URL pública
+      const { data: urlData } = supabase.storage
+        .from("perfil-secretarios")
+        .getPublicUrl(nomeArquivo);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Atualiza no banco
+      const { error: updateError } = await supabase
+        .from("secretario")
+        .update({ fotoPerfil: publicUrl })
+        .eq("id", userId);
+
+      if (updateError) {
+        console.log("Erro ao atualizar foto no banco:", updateError.message);
+        return;
+      }
+
+      setFoto(publicUrl);
+    } catch (e) {
+      console.log("Erro ao alterar foto:", e);
     }
   }
 
@@ -100,7 +139,7 @@ export default function PerfilSecretario() {
                 marginBottom: 10,
               }}
             >
-              <User size={50} color="#9CA3AF" />
+              <UserIcon size={50} color="#9CA3AF" />
             </View>
           )}
         </TouchableOpacity>
@@ -127,14 +166,14 @@ export default function PerfilSecretario() {
 
         <InfoLinha
           label="Telefone"
-          value={dados?.telefone}
-          icon={<Phone size={26} color="#3B82F6" />}
+          value={dados?.telefone || "—"}
+          icon={<PhoneIcon size={26} color="#3B82F6" />}
         />
 
         <InfoLinha
           label="Responsável por"
-          value={dados?.responsavelPor}
-          icon={<ClipboardText size={26} color="#10B981" />}
+          value={dados?.responsavelPor || "—"}
+          icon={<ClipboardTextIcon size={26} color="#10B981" />}
         />
       </View>
 
@@ -153,14 +192,14 @@ export default function PerfilSecretario() {
 
         <InfoLinha
           label="Atendimentos realizados"
-          value={`${dados?.atendimentosHoje} atendimentos hoje`}
-          icon={<ClipboardText size={26} color="#3B82F6" />}
+          value={`${dados?.atendimentosHoje || 0} atendimentos hoje`}
+          icon={<ClipboardTextIcon size={26} color="#3B82F6" />}
         />
 
         <InfoLinha
           label="Próximos agendamentos"
-          value={`${dados?.agendamentos} consultas agendadas`}
-          icon={<Calendar size={26} color="#F97316" />}
+          value={`${dados?.agendamentos || 0} consultas agendadas`}
+          icon={<CalendarIcon size={26} color="#F97316" />}
         />
       </View>
     </ScrollView>

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import { User, Stethoscope, Phone, Calendar } from "phosphor-react-native";
-import Parse from "parse/react-native.js";
+import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
+import { User, Stethoscope, Phone, Calendar, StethoscopeIcon, PhoneIcon, CalendarIcon } from "phosphor-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { supabase } from "../../supabase";
 
-export default function PerfilMedico() {
-  const [dados, setDados] = useState(null);
-  const [foto, setFoto] = useState(null);
+export default function PerfilMedico({ userId }: { userId: string }) {
+  const [dados, setDados] = useState<any>(null);
+  const [foto, setFoto] = useState<string | null>(null);
 
   useEffect(() => {
     buscarDados();
@@ -14,43 +14,73 @@ export default function PerfilMedico() {
 
   async function buscarDados() {
     try {
-      const currentUser = await Parse.User.currentAsync();
-      if (!currentUser) return;
+      const { data, error } = await supabase
+        .from("medico")
+        .select("*")
+        .eq("id", userId)
+        .single();
 
-      setDados({
-        nome: currentUser.get("nome"),
-        crm: currentUser.get("crm"),
-        especialidade: currentUser.get("especialidade"),
-        telefone: currentUser.get("telefone"),
-        consultasHoje: currentUser.get("consultasHoje") || 0,
-        proximasConsultas: currentUser.get("proximasConsultas") || 0,
-      });
+      if (error) {
+        console.log("Erro ao buscar dados:", error.message);
+        return;
+      }
 
-      const fotoPerfil = currentUser.get("fotoPerfil");
-      if (fotoPerfil) setFoto(fotoPerfil.url());
+      setDados(data);
+      setFoto(data.fotoPerfil || null);
     } catch (e) {
       console.log(e);
     }
   }
 
   async function alterarFoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
 
-    if (!result.canceled) {
+      if (result.canceled) return;
+
       const uri = result.assets[0].uri;
       const nomeArquivo = uri.substring(uri.lastIndexOf("/") + 1);
-      const arquivo = new Parse.File(nomeArquivo, { uri });
 
-      const currentUser = await Parse.User.currentAsync();
-      currentUser.set("fotoPerfil", arquivo);
-      await currentUser.save();
+      // Envia a foto para o Supabase Storage
+      const response = await fetch(uri);
+      const blob = await response.blob();
 
-      setFoto(arquivo.url());
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("perfil-medicos") // nome do bucket
+        .upload(nomeArquivo, blob, { upsert: true });
+
+      if (uploadError) {
+        console.log("Erro ao enviar foto:", uploadError.message);
+        Alert.alert("Erro", "Não foi possível enviar a foto.");
+        return;
+      }
+
+      // Pega a URL pública da foto
+      const { data: urlData } = supabase.storage
+        .from("perfil-medicos")
+        .getPublicUrl(nomeArquivo);
+      
+      const publicUrl = urlData.publicUrl;
+
+      // Atualiza no banco de dados
+      const { error: updateError } = await supabase
+        .from("medico")
+        .update({ fotoPerfil: publicUrl })
+        .eq("id", userId);
+
+      if (updateError) {
+        console.log("Erro ao atualizar foto no banco:", updateError.message);
+        return;
+      }
+
+      setFoto(publicUrl);
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -109,10 +139,10 @@ export default function PerfilMedico() {
           marginBottom: 15
         }}>Informações</Text>
 
-        <Info label="CRM" value={dados?.crm} icon={<Stethoscope size={26} color="#3B82F6" />} />
-        <Info label="Telefone" value={dados?.telefone} icon={<Phone size={26} color="#10B981" />} />
-        <Info label="Consultas hoje" value={`${dados?.consultasHoje}`} icon={<Calendar size={26} color="#F97316" />} />
-        <Info label="Próximas consultas" value={`${dados?.proximasConsultas}`} icon={<Calendar size={26} color="#6366F1" />} />
+        <Info label="CRM" value={dados?.crm} icon={<StethoscopeIcon size={26} color="#3B82F6" />} />
+        <Info label="Telefone" value={dados?.telefone} icon={<PhoneIcon size={26} color="#10B981" />} />
+        <Info label="Consultas hoje" value={`${dados?.consultasHoje}`} icon={<CalendarIcon size={26} color="#F97316" />} />
+        <Info label="Próximas consultas" value={`${dados?.proximasConsultas}`} icon={<CalendarIcon size={26} color="#6366F1" />} />
       </View>
 
     </ScrollView>
