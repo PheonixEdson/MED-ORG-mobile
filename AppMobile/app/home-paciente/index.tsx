@@ -1,7 +1,20 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
 
+// --- CORES PADRONIZADAS ---
+const COLORS = {
+  primary: "#007bff", // Azul principal
+  secondary: "#6c757d", // Cinza secundário
+  background: "#f8f9fa", // Fundo claro
+  card: "#ffffff", // Fundo do cartão
+  textPrimary: "#212529", // Texto escuro
+  textSecondary: "#495057", // Texto cinza
+  accent: "#28a745", // Verde para destaque/sucesso
+  warning: "#ffc107", // Amarelo para aviso
+};
+
+// --- COMPONENTE HOME PACIENTE ---
 export default function HomePaciente() {
   const router = useRouter();
 
@@ -18,101 +31,125 @@ export default function HomePaciente() {
   ];
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerText}>MED-ORG</Text>
-        <Text style={styles.timeText}>
-          {new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </Text>
-      </View>
+    <ScrollView contentContainerStyle={styles.wrapper}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>MED-ORG</Text>
+          <Text style={styles.headerTime}>
+            {new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </View>
 
-      {/* Nome do usuário */}
-      <Text style={styles.userName}>{userName}</Text>
+        {/* Nome do usuário */}
+        <Text style={styles.userName}>Olá, {userName}</Text>
 
-      {/* Menu */}
-      <View style={styles.menuGrid}>
-        {menuItems.map((item, index) => (
+        {/* Menu */}
+        <View style={styles.menuGrid}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => router.push(item.path as any)}
+              style={styles.menuItem}
+            >
+              <Text style={styles.menuIcon}>{item.icon}</Text>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+
           <TouchableOpacity
-            key={index}
-            onPress={() => router.push(item.path as any)}
-            style={styles.menuItem}
+            style={[styles.menuItem, styles.menuItemSuporte]}
+            onPress={() => router.push("/suporte")}
           >
-            <Text style={styles.menuIcon}>{item.icon}</Text>
-            <Text style={styles.menuLabel}>{item.label}</Text>
+            <Text style={styles.menuIcon}>🆘</Text>
+            <Text style={styles.menuLabel}>Suporte</Text>
           </TouchableOpacity>
-        ))}
-
-        <TouchableOpacity
-          style={[styles.menuItem, styles.suporteButton]}
-          onPress={() => router.push("/suporte")}
-        >
-          <Text style={styles.menuIcon}>🆘</Text>
-          <Text style={styles.menuLabel}>Suporte</Text>
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
+// --- ESTILOS PADRONIZADOS ---
 const styles = StyleSheet.create({
+  wrapper: {
+    padding: 20,
+    backgroundColor: COLORS.background,
+    flexGrow: 1,
+  },
   container: {
-    flex: 1,
-    backgroundColor: "#e0e7ff",
+    backgroundColor: COLORS.card,
+    padding: 25,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 8,
   },
   header: {
-    backgroundColor: "#1e3a8a",
-    padding: 20,
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
-  headerText: {
-    color: "white",
-    fontSize: 22,
-    fontWeight: "bold",
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: COLORS.primary,
   },
-  timeText: {
-    color: "white",
+  headerTime: {
     fontSize: 16,
+    color: COLORS.textSecondary,
+    alignSelf: 'flex-end',
   },
   userName: {
-    backgroundColor: "#dbeafe",
-    padding: 15,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "600",
+    color: COLORS.textPrimary,
     textAlign: "center",
-    color: "#1e3a8a",
+    marginBottom: 30,
+    paddingVertical: 10,
+    backgroundColor: '#e9ecef', // Fundo sutil para o nome
+    borderRadius: 8,
   },
   menuGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    padding: 20,
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
   menuItem: {
-    width: "42%",
+    width: "48%",
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 12,
     padding: 20,
-    margin: 10,
-    backgroundColor: "white",
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#3b82f6",
+    marginBottom: 15,
+    alignItems: "center", // Centralizado para um visual mais limpo
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  menuItemSuporte: {
+    borderColor: COLORS.warning, // Cor de aviso para Suporte
   },
   menuIcon: {
-    fontSize: 30,
+    fontSize: 36,
+    marginBottom: 10,
   },
   menuLabel: {
-    marginTop: 10,
+    fontSize: 14,
     fontWeight: "600",
-    fontSize: 16,
-    color: "#1e40af",
-  },
-  suporteButton: {
-    borderColor: "#dc2626",
-    backgroundColor: "#fee2e2",
+    color: COLORS.textPrimary,
+    textAlign: 'center',
   },
 });
