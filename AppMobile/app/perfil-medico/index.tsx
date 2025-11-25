@@ -1,136 +1,136 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import React from "react";
-import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
+import { User, Stethoscope, Phone, Calendar } from "phosphor-react-native";
+import Parse from "parse/react-native.js";
+import * as ImagePicker from "expo-image-picker";
 
 export default function PerfilMedico() {
-  const router = useRouter();
-  
-  const medico = {
-    nome: "Dr. João Silva",
-    especialidade: "Cardiologia",
-    crm: "CRM-12345",
-    email: "drjoao@medorg.com",
-  };
+  const [dados, setDados] = useState(null);
+  const [foto, setFoto] = useState(null);
+
+  useEffect(() => {
+    buscarDados();
+  }, []);
+
+  async function buscarDados() {
+    try {
+      const currentUser = await Parse.User.currentAsync();
+      if (!currentUser) return;
+
+      setDados({
+        nome: currentUser.get("nome"),
+        crm: currentUser.get("crm"),
+        especialidade: currentUser.get("especialidade"),
+        telefone: currentUser.get("telefone"),
+        consultasHoje: currentUser.get("consultasHoje") || 0,
+        proximasConsultas: currentUser.get("proximasConsultas") || 0,
+      });
+
+      const fotoPerfil = currentUser.get("fotoPerfil");
+      if (fotoPerfil) setFoto(fotoPerfil.url());
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async function alterarFoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      const nomeArquivo = uri.substring(uri.lastIndexOf("/") + 1);
+      const arquivo = new Parse.File(nomeArquivo, { uri });
+
+      const currentUser = await Parse.User.currentAsync();
+      currentUser.set("fotoPerfil", arquivo);
+      await currentUser.save();
+
+      setFoto(arquivo.url());
+    }
+  }
 
   return (
-    <ScrollView contentContainerStyle={styles.wrapper}>
-      <View style={styles.container}>
+    <ScrollView contentContainerStyle={{ padding: 20, backgroundColor: "#F7F7F7" }}>
+      
+      {/* Cabeçalho */}
+      <View style={{
+        alignItems: "center",
+        paddingVertical: 40,
+        backgroundColor: "white",
+        borderRadius: 20,
+        elevation: 3,
+        marginBottom: 30
+      }}>
         
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Perfil do Médico</Text>
-        </View>
+        <TouchableOpacity onPress={alterarFoto}>
+          {foto ? (
+            <Image source={{ uri: foto }} style={{
+              width: 90,
+              height: 90,
+              borderRadius: 50
+            }} />
+          ) : (
+            <View style={{
+              width: 90,
+              height: 90,
+              borderRadius: 50,
+              backgroundColor: "#E5E7EB",
+              justifyContent: "center",
+              alignItems: "center"
+            }}>
+              <User size={50} color="#9CA3AF" />
+            </View>
+          )}
+        </TouchableOpacity>
 
-        {/* Card de Perfil */}
-        <View style={styles.profileCard}>
-          <Text style={styles.profileName}>{medico.nome}</Text>
-          <Text style={styles.profileInfo}>Especialidade: {medico.especialidade}</Text>
-          <Text style={styles.profileInfo}>CRM: {medico.crm}</Text>
-          <Text style={styles.profileInfo}>E-mail: {medico.email}</Text>
-        </View>
-
-        {/* Botões */}
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Editar Perfil</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push("/configuracoes")}
-          >
-            <Text style={styles.buttonText}>Configurações</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.button, styles.logoutButton]}>
-            <Text style={styles.logoutText}>Sair da Conta</Text>
-          </TouchableOpacity>
-        </View>
-
+        <Text style={{ fontSize: 24, fontWeight: "bold", marginTop: 10 }}>
+          {dados?.nome || "Carregando..."}
+        </Text>
+        <Text style={{ fontSize: 16, color: "#666" }}>
+          Médico(a) – {dados?.especialidade}
+        </Text>
       </View>
+
+      {/* Informações */}
+      <View style={{
+        backgroundColor: "white",
+        padding: 20,
+        borderRadius: 16,
+        elevation: 3
+      }}>
+        <Text style={{
+          fontSize: 20,
+          fontWeight: "bold",
+          marginBottom: 15
+        }}>Informações</Text>
+
+        <Info label="CRM" value={dados?.crm} icon={<Stethoscope size={26} color="#3B82F6" />} />
+        <Info label="Telefone" value={dados?.telefone} icon={<Phone size={26} color="#10B981" />} />
+        <Info label="Consultas hoje" value={`${dados?.consultasHoje}`} icon={<Calendar size={26} color="#F97316" />} />
+        <Info label="Próximas consultas" value={`${dados?.proximasConsultas}`} icon={<Calendar size={26} color="#6366F1" />} />
+      </View>
+
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    padding: 20,
-    backgroundColor: "#F5F7FA",
-    flexGrow: 1,
-  },
-
-  container: {
-    backgroundColor: "#FFFFFF",
-    padding: 25,
-    borderRadius: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-
-  header: {
-    borderBottomWidth: 1,
-    borderColor: "#E3E6EA",
-    paddingBottom: 12,
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#1F2D3D",
-    textAlign: "center",
-  },
-
-  profileCard: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 18,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-    marginBottom: 30,
-  },
-
-  profileName: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#2C3E50",
-    marginBottom: 10,
-  },
-
-  profileInfo: {
-    fontSize: 16,
-    color: "#555",
-    marginBottom: 6,
-  },
-
-  buttonsContainer: {
-    gap: 15,
-  },
-
-  button: {
-    backgroundColor: "#3498db",
-    padding: 15,
-    borderRadius: 14,
-    alignItems: "center",
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  logoutButton: {
-    backgroundColor: "#ffe9e9",
-    borderColor: "#e74c3c",
-    borderWidth: 2,
-  },
-  logoutText: {
-    color: "#e74c3c",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-});
+function Info({ label, value, icon }) {
+  return (
+    <View style={{
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 15
+    }}>
+      <View style={{ marginRight: 12 }}>{icon}</View>
+      <View>
+        <Text style={{ fontSize: 16, color: "#444" }}>{label}</Text>
+        <Text style={{ fontSize: 17, fontWeight: "bold" }}>{value}</Text>
+      </View>
+    </View>
+  );
+}
