@@ -11,7 +11,6 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import Parse from "parse/react-native.js";
 import * as ImagePicker from "expo-image-picker";
 
 const PLACEHOLDER_LOCAL_FILE = "file:///mnt/data/A_digital_screenshot_of_a_mobile_application_home_.png";

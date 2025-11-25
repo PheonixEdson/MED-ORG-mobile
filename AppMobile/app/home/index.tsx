@@ -28,19 +28,71 @@ export default function HomeScreen() {
       Alert.alert("Erro", "Preencha email e senha.");
       return;
     }
-
+  
+    // 1️⃣ Fazer login
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: senha,
     });
-
+  
     if (error) {
       Alert.alert("Erro", error.message);
       return;
     }
-
-    // Login OK → redireciona
-    router.push("/escolha-cadastro");
+  
+    // 2️⃣ Obter usuário atual
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+  
+    if (!user) {
+      Alert.alert("Erro", "Usuário não encontrado.");
+      return;
+    }
+  
+    const userId = user.id;
+  
+    // 3️⃣ Verificar se é MÉDICO
+    const { data: medico } = await supabase
+      .from("medico")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+  
+    if (medico) {
+      router.push("/home-medico");
+      return;
+    }
+  
+    // 4️⃣ Verificar se é PACIENTE
+    const { data: paciente } = await supabase
+      .from("paciente")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+  
+    if (paciente) {
+      router.push("/home-paciente");
+      return;
+    }
+  
+    // 5️⃣ Verificar se é SECRETÁRIO
+    const { data: secretario } = await supabase
+      .from("secretario")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+  
+    if (secretario) {
+      router.push("/home-secretario");
+      return;
+    }
+  
+    // 6️⃣ Nenhuma tabela achou
+    Alert.alert(
+      "Erro",
+      "Seu usuário não está registrado em nenhuma categoria (médico, paciente ou secretário)."
+    );
   };
 
   // =========================================================

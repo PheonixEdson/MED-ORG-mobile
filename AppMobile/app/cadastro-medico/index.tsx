@@ -1,10 +1,20 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import { useRouter } from "expo-router";
-import { StyleSheet } from "react-native";
+import { supabase } from "../../supabase";
 
 export default function CadastroMedico() {
   const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -21,7 +31,9 @@ export default function CadastroMedico() {
     setFormData((prev) => ({ ...prev, [campo]: valor }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (loading) return;
+
     const senhaValida = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{6,}$/;
 
     if (formData.senha !== formData.confirmarSenha) {
@@ -30,13 +42,60 @@ export default function CadastroMedico() {
     }
 
     if (!senhaValida.test(formData.senha)) {
-      Alert.alert("Erro", "A senha deve conter ao menos: \n• 1 letra maiúscula\n• 1 símbolo especial\n• Min. 6 caracteres");
+      Alert.alert(
+        "Erro",
+        "A senha deve conter:\n• 1 letra maiúscula\n• 1 símbolo especial\n• Mínimo de 6 caracteres"
+      );
       return;
     }
 
-    console.log("Cadastro médico enviado:", formData);
-    Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-    router.push("/home-medico");
+    try {
+      setLoading(true);
+
+      // 1️⃣ Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.senha,
+      });
+
+      if (authError) {
+        Alert.alert("Erro no cadastro", authError.message);
+        setLoading(false);
+        return;
+      }
+
+      const user = authData.user;
+
+      if (!user) {
+        Alert.alert("Erro", "Usuário não foi retornado pelo Supabase.");
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Inserir na tabela médico
+      const { error: insertError } = await supabase.from("medico").insert({
+        user_id: user.id,
+        nome: formData.nome,
+        email: formData.email,
+        sexo: formData.sexo,
+        especializacao: formData.especializacao,
+        crm: formData.crm,
+        formacao: formData.formacao,
+      });
+
+      if (insertError) {
+        Alert.alert("Erro ao salvar dados", insertError.message);
+        setLoading(false);
+        return;
+      }
+
+      Alert.alert("Sucesso!", "Cadastro médico realizado.");
+      router.push("/home-medico");
+    } catch (err) {
+      Alert.alert("Erro inesperado", "Tente novamente mais tarde.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,6 +144,7 @@ export default function CadastroMedico() {
           value={formData.formacao}
           onChangeText={(t) => handleChange("formacao", t)}
         />
+
         <TextInput
           style={styles.input}
           placeholder="Senha"
@@ -101,7 +161,9 @@ export default function CadastroMedico() {
         />
 
         <TouchableOpacity style={styles.btn} onPress={handleSubmit}>
-          <Text style={styles.btnText}>Cadastrar</Text>
+          <Text style={styles.btnText}>
+            {loading ? "Cadastrando..." : "Cadastrar"}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -114,14 +176,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f4f6fb",
     flexGrow: 1,
   },
-  voltarBtn: {
-    marginBottom: 10,
-  },
-  voltarTexto: {
-    fontSize: 18,
-    color: "#2563eb",
-    fontWeight: "bold",
-  },
+  voltarBtn: { marginBottom: 10 },
+  voltarTexto: { fontSize: 18, color: "#2563eb", fontWeight: "bold" },
   title: {
     fontSize: 28,
     fontWeight: "700",
@@ -135,10 +191,6 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: "#d9d9d9",
-    shadowColor: "#000",
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 3,
   },
   input: {
     borderWidth: 1,
