@@ -4,87 +4,86 @@ import { useRouter } from "expo-router";
 export default function TelaEscolhaCadastro() {
   const router = useRouter();
 
-    const navegarPara = (tipo: "Medico" | "Paciente" | "Secretario") => {
-        const rotas = {
-            Medico: "/cadastro-medico",
-            Paciente: "/cadastro-paciente",
-            Secretario: "/cadastro-secretario",
-        } as const;
+  const navegarPara = (tipo: "Medico" | "Paciente" | "Secretario") => {
+    const rotas = {
+      Medico: "/cadastro-medico",
+      Paciente: "/cadastro-paciente",
+      Secretario: "/cadastro-secretario",
+    } as const;
 
-        router.push(rotas[tipo]);
-    };
+    router.push(rotas[tipo]);
+  };
 
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.voltarBtn} onPress={() => router.push("/home")}>
+        <Text style={styles.voltarText}>← Voltar</Text>
+      </TouchableOpacity>
 
-    return (
-        <View style={styles.telaEscolha}>
-        <TouchableOpacity style={styles.voltarBtn} onPress={() => router.push("/home")}>
-            <Text style={styles.voltarText}>← Voltar</Text>
-        </TouchableOpacity>
+      <Text style={styles.title}>Escolha o tipo de cadastro</Text>
 
-        <Text style={styles.titleEscolha}>Escolha o tipo de cadastro</Text>
+      <TouchableOpacity style={styles.botao} onPress={() => navegarPara("Medico")}>
+        <Text style={styles.botaoTexto}>Cadastro Médico</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoEscolha} onPress={() => navegarPara("Medico")}>
-            <Text style={styles.botaoTexto}>Cadastro Médico</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.botao} onPress={() => navegarPara("Paciente")}>
+        <Text style={styles.botaoTexto}>Cadastro Paciente</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoEscolha} onPress={() => navegarPara("Paciente")}>
-            <Text style={styles.botaoTexto}>Cadastro Paciente</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.botaoEscolha} onPress={() => navegarPara("Secretario")}>
-            <Text style={styles.botaoTexto}>Cadastro Secretário</Text>
-        </TouchableOpacity>
-        </View>
-    );
+      <TouchableOpacity style={styles.botao} onPress={() => navegarPara("Secretario")}>
+        <Text style={styles.botaoTexto}>Cadastro Secretário</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  telaEscolha: {
+  container: {
     flex: 1,
+    backgroundColor: "#eef2ff",
     justifyContent: "center",
     alignItems: "center",
-    padding: 40,
-    backgroundColor: "#f0f2f5",
+    paddingHorizontal: 40,
   },
 
-  titleEscolha: {
+  voltarBtn: {
+    position: "absolute",
+    top: 22,
+    left: 20,
+  },
+
+  voltarText: {
+    fontSize: 18,
+    color: "#3b82f6",
+    fontWeight: "700",
+  },
+
+  title: {
     fontSize: 28,
-    fontWeight: "bold",
-    color: "#1976D2",
-    marginBottom: 50,
+    fontWeight: "800",
+    color: "#1e3a8a",
     textAlign: "center",
+    marginBottom: 45,
   },
 
-  botaoEscolha: {
-    backgroundColor: "#1976D2",
+  botao: {
+    backgroundColor: "#3b82f6",
+    width: "85%",
+    maxWidth: 340,
     paddingVertical: 16,
-    paddingHorizontal: 30,
-    borderRadius: 35,
-    width: "80%",
-    maxWidth: 320,
-    marginVertical: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
+    borderRadius: 14,
+    marginVertical: 10,
+    alignItems: "center",
+    shadowColor: "#3b82f6",
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
   botaoTexto: {
     color: "#fff",
     fontSize: 18,
-    textAlign: "center",
-    fontWeight: "600",
-  },
-
-  voltarBtn: {
-    position: "absolute",
-    top: 20,
-    left: 20,
-  },
-
-  voltarText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1976d2",
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });
