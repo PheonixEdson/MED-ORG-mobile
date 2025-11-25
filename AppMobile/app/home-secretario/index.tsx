@@ -3,6 +3,19 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from "rea
 import { useRouter } from "expo-router";
 //import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// --- CORES PADRONIZADAS ---
+const COLORS = {
+  primary: "#007bff", // Azul principal
+  secondary: "#6c757d", // Cinza secundário
+  background: "#f8f9fa", // Fundo claro
+  card: "#ffffff", // Fundo do cartão
+  textPrimary: "#212529", // Texto escuro
+  textSecondary: "#495057", // Texto cinza
+  accent: "#28a745", // Verde para destaque/sucesso
+  warning: "#ffc107", // Amarelo para aviso
+};
+
+// --- COMPONENTE HOME SECRETARIO ---
 export default function HomeSecretario() {
   const router = useRouter();
 
@@ -50,21 +63,24 @@ export default function HomeSecretario() {
       <View style={styles.container}>
         {/* HEADER */}
         <View style={styles.header}>
-          <Text style={styles.headerText}>MED-ORG</Text>
-          <Text style={styles.hora}>
+          <Text style={styles.headerTitle}>MED-ORG</Text>
+          <Text style={styles.headerTime}>
             {hora.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </Text>
         </View>
 
         {/* NOME DO USUÁRIO */}
-        <Text style={styles.usuarioNome}>{userName}</Text>
+        <Text style={styles.userName}>Olá, {userName}</Text>
 
         {/* MENU */}
         <ScrollView contentContainerStyle={styles.menuContainer}>
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.menuItem}
+              style={[
+                styles.menuItem,
+                item.label === "Suporte" && styles.menuItemSuporte
+              ]}
               onPress={() => router.push(item.path as any)}
             >
               <Text style={styles.menuIcon}>{item.icon}</Text>
@@ -77,86 +93,97 @@ export default function HomeSecretario() {
   );
 }
 
+// --- ESTILOS PADRONIZADOS ---
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: "#ecf0f1",
+    backgroundColor: COLORS.background,
     padding: 20,
-    alignItems: "center",
   },
 
   container: {
     width: "100%",
     flex: 1,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
+    backgroundColor: COLORS.card,
+    padding: 25,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 8,
   },
 
   header: {
-    width: "100%",
-    backgroundColor: "#1e3a8a",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 20,
-    paddingHorizontal: 30,
-    alignItems: "center",
-    borderBottomWidth: 3,
-    borderBottomColor: "#2563eb",
-  },
-
-  headerText: {
-    color: "white",
-    fontSize: 26,
-    fontWeight: "bold",
-  },
-
-  hora: {
-    color: "white",
-    opacity: 0.8,
-    fontSize: 16,
-  },
-
-  usuarioNome: {
-    width: "100%",
-    backgroundColor: "#e0e7ff",
-    textAlign: "center",
-    paddingVertical: 12,
-    fontWeight: "600",
-    fontSize: 20,
-    color: "#1e3a8a",
-    borderBottomColor: "#1e3a8a",
-    borderBottomWidth: 2,
     marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+
+  headerTime: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    alignSelf: 'flex-end',
+  },
+
+  userName: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    textAlign: "center",
+    marginBottom: 30,
+    paddingVertical: 10,
+    backgroundColor: '#e9ecef', // Fundo sutil para o nome
+    borderRadius: 8,
   },
 
   menuContainer: {
     paddingBottom: 40,
     width: "100%",
-    alignItems: "center",
+    flexDirection: "row", // Para usar flexWrap
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
 
   menuItem: {
-    width: "90%",
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderWidth: 2,
-    borderColor: "#1e3a8a",
-    padding: 20,
+    width: "48%", // Ajustado para 48% para caber 2 por linha com espaço
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
     borderRadius: 12,
-    marginBottom: 18,
+    padding: 20,
+    marginBottom: 15,
+    alignItems: "center", // Centralizado para um visual mais limpo
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
     elevation: 3,
+  },
+
+  menuItemSuporte: {
+    borderColor: COLORS.warning, // Cor de aviso para Suporte
   },
 
   menuIcon: {
     fontSize: 36,
-    marginRight: 20,
-    color: "#1e3a8a",
+    marginBottom: 10,
   },
 
   menuLabel: {
-    fontSize: 20,
-    color: "#1e3a8a",
+    fontSize: 14,
     fontWeight: "600",
+    color: COLORS.textPrimary,
+    textAlign: 'center',
   },
 });
