@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from "react-na
 import { User, Stethoscope, Phone, Calendar, StethoscopeIcon, PhoneIcon, CalendarIcon } from "phosphor-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../supabase";
+import { useRouter } from "expo-router";
 
 export default function PerfilMedico({ userId }: { userId: string }) {
   const [dados, setDados] = useState<any>(null);
