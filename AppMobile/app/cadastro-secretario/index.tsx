@@ -25,6 +25,31 @@ export default function CadastroSecretario() {
   });
 
   const handleChange = (key: string, value: string) => {
+    if (key === "cpf") {
+      value = value
+        .replace(/\D/g, "")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+        .slice(0, 14);
+    }
+
+    if (key === "telefone") {
+      value = value
+        .replace(/\D/g, "")
+        .replace(/(\d{2})(\d)/, "($1) $2")
+        .replace(/(\d{5})(\d)/, "$1-$2")
+        .slice(0, 15);
+    }
+
+    if (key === "dataNascimento") {
+      value = value
+        .replace(/\D/g, "")
+        .replace(/(\d{2})(\d)/, "$1/$2")
+        .replace(/(\d{2})(\d)/, "$1/$2")
+        .slice(0, 10);
+    }
+
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -34,7 +59,6 @@ export default function CadastroSecretario() {
       return;
     }
 
-    console.log("Cadastro de secretário enviado:", formData);
     alert("Cadastro realizado com sucesso!");
     router.push("/home-secretario");
   };
@@ -75,20 +99,22 @@ export default function CadastroSecretario() {
           style={styles.input}
           placeholder="CPF"
           value={formData.cpf}
+          keyboardType="numeric"
           onChangeText={(v) => handleChange("cpf", v)}
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Sexo"
+          placeholder="Sexo (M/F)"
           value={formData.sexo}
           onChangeText={(v) => handleChange("sexo", v)}
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Data de Nascimento (DD/MM/AAAA)"
+          placeholder="Data de Nascimento"
           value={formData.dataNascimento}
+          keyboardType="numeric"
           onChangeText={(v) => handleChange("dataNascimento", v)}
         />
 
@@ -126,54 +152,62 @@ export default function CadastroSecretario() {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    backgroundColor: "#f4f6fb",
+    backgroundColor: "#eef2ff",
     flexGrow: 1,
   },
   voltarBtn: {
-    marginBottom: 15,
+    marginBottom: 20,
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
   },
   voltarTexto: {
     fontSize: 18,
-    color: "#2563eb",
+    color: "#3b82f6",
     fontWeight: "700",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#2563eb",
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#1e3a8a",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 28,
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 22,
     borderWidth: 1,
-    borderColor: "#d9d9d9",
+    borderColor: "#e2e8f0",
     shadowColor: "#000",
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     elevation: 3,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#d9d9d9",
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 6,
+    borderWidth: 1.5,
+    borderColor: "#cbd5e1",
+    borderRadius: 10,
+    padding: 14,
+    marginVertical: 8,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#f8fafc",
   },
   btn: {
-    backgroundColor: "#2563eb",
-    padding: 14,
-    borderRadius: 10,
-    marginTop: 10,
+    backgroundColor: "#3b82f6",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 18,
+    shadowColor: "#3b82f6",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   btnText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: 18,
+    letterSpacing: 0.5,
   },
 });
