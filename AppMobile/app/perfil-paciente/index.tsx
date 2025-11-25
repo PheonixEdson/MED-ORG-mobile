@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from "react-na
 import { User, Phone, MapPin, Calendar, PhoneIcon, MapPinIcon, CalendarIcon } from "phosphor-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../supabase";
+import { useRouter } from "expo-router";
 
 export default function PerfilPaciente() {
   const [dados, setDados] = useState<any>(null);
@@ -173,3 +174,4 @@ function Info({ label, value, icon }) {
     </View>
   );
 }
+
