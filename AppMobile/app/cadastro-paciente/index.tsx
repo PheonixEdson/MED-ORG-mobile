@@ -1,13 +1,26 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, ScrollView, Switch, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  Switch,
+  TouchableOpacity,
+  StyleSheet,
+  Alert
+} from "react-native";
 import { useRouter } from "expo-router";
+import { supabase } from "../../supabase";
 
 export default function CadastroPaciente() {
   const router = useRouter();
 
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
+    senha: "",
     sexo: "",
     dataNascimento: "",
     cpf: "",
@@ -21,10 +34,71 @@ export default function CadastroPaciente() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log("Cadastro de paciente enviado:", formData);
-    alert("Cadastro realizado com sucesso!");
-    router.push("/home-paciente");
+  // 🔹 Converte 25/03/2004 -> 2004-03-25 (PostgreSQL)
+  const formatarDataParaSQL = (dataBR: string) => {
+    const [dia, mes, ano] = dataBR.split("/");
+    return `${ano}-${mes}-${dia}`;
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (loading) return;
+
+      if (!formData.email || !formData.senha) {
+        Alert.alert("Erro", "E-mail e senha são obrigatórios.");
+        return;
+      }
+
+      setLoading(true);
+
+      // 1️⃣ Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.senha,
+      });
+
+      if (authError) {
+        Alert.alert("Erro no cadastro", authError.message);
+        setLoading(false);
+        return;
+      }
+
+      const user = authData.user;
+      if (!user) {
+        Alert.alert("Erro", "Falha ao criar usuário.");
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Inserir dados do paciente na tabela `paciente`
+      const { error: insertError } = await supabase.from("paciente").insert({
+        user_id: user.id,
+        nome: formData.nome,
+        sexo: formData.sexo,
+        email: formData.email,
+        cpf: formData.cpf.replace(/\D/g, ""),
+        telefone: formData.telefone.replace(/\D/g, ""),
+        endereco: formData.endereco,
+        data_de_nascimento: formatarDataParaSQL(formData.dataNascimento),
+        possui_plano: formData.possuiPlano,
+        fornecedora_do_plano: formData.possuiPlano
+          ? formData.fornecedoraPlano
+          : null,
+      });
+
+      if (insertError) {
+        Alert.alert("Erro ao salvar dados", insertError.message);
+        setLoading(false);
+        return;
+      }
+
+      Alert.alert("Sucesso!", "Paciente cadastrado com sucesso!");
+      router.push("/home-paciente");
+    } catch (err) {
+      Alert.alert("Erro inesperado", "Tente novamente mais tarde.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,6 +110,7 @@ export default function CadastroPaciente() {
       <Text style={styles.title}>Cadastro de Paciente</Text>
 
       <View style={styles.card}>
+
         <TextInput
           style={styles.input}
           placeholder="Nome"
@@ -47,12 +122,21 @@ export default function CadastroPaciente() {
           style={styles.input}
           placeholder="E-mail"
           value={formData.email}
+          keyboardType="email-address"
           onChangeText={(v) => handleChange("email", v)}
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Sexo (Masculino, Feminino, Outro)"
+          placeholder="Senha"
+          secureTextEntry
+          value={formData.senha}
+          onChangeText={(v) => handleChange("senha", v)}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Sexo"
           value={formData.sexo}
           onChangeText={(v) => handleChange("sexo", v)}
         />
@@ -85,7 +169,6 @@ export default function CadastroPaciente() {
           onChangeText={(v) => handleChange("endereco", v)}
         />
 
-        {/* Checkbox adaptado → Switch */}
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Possui plano de saúde?</Text>
           <Switch
@@ -104,7 +187,9 @@ export default function CadastroPaciente() {
         )}
 
         <TouchableOpacity style={styles.btn} onPress={handleSubmit}>
-          <Text style={styles.btnText}>Cadastrar</Text>
+          <Text style={styles.btnText}>
+            {loading ? "Cadastrando..." : "Cadastrar"}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
